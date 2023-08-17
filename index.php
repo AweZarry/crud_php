@@ -6,8 +6,8 @@ $database = new Database();
 $db = $database->getConnection();
 $crud = new Crud($db);
 
-if(isset($_GET['action'])){
-    switch($_GET['action']){
+if (isset($_GET['action'])) {
+    switch ($_GET['action']) {
         case 'create':
             $crud->create($_POST);
             $rows = $crud->read();
@@ -20,7 +20,7 @@ if(isset($_GET['action'])){
             $rows = $crud->read();
             break;
     }
-}else{
+} else {
     $rows = $crud->read();
 }
 
@@ -79,7 +79,8 @@ if(isset($_GET['action'])){
             color: #333;
         }
 
-        th,td {
+        th,
+        td {
             text-align: left;
             padding: 8px;
             border: 1px solid #ddd;
@@ -141,9 +142,51 @@ if(isset($_GET['action'])){
             <td>Placa</td>
             <td>Cor</td>
             <td>ano</td>
+            <td>Ações</td>
         </tr>
+
+        <?php
+        if ($rows->rowCount() == 0) {
+            echo "<tr>";
+            echo "<td colspan='7'>Nenhum dado encontrado</td>";
+            echo "</tr>";
+        } else {
+            while ($row = $rows->fetch(PDO::FETCH_ASSOC)) {
+                echo "<tr>";
+                echo "<td>" . $row['id'] . "</td>";
+                echo "<td>" . $row['modelo'] . "</td>";
+                echo "<td>" . $row['marca'] . "</td>";
+                echo "<td>" . $row['placa'] . "</td>";
+                echo "<td>" . $row['cor'] . "</td>";
+                echo "<td>" . $row['ano'] . "</td>";
+                echo "<td>";
+                echo "<a href='?action=update&id=" . $row['id'] . "'>Editar</a>";
+                echo "<a href='?action=delete&id=" . $row['id'] . "' onclick='return confirm(\"Tem certeza que quer apagar esse registro?\")' class='delete'>Delete</a>";
+                echo "</td>";
+                echo "</tr>";
+            }
+        }
+        ?>
+
     </table>
 
 </body>
+
+        <?php
+            if(isset($_GET['action']) && $_GET['action'] == 'update' && isset($_GET['id'])){
+                $id = $_GET['id'];
+                $result =$crud->readOne($id);
+
+                if($result){
+                    echo "Registro não encontrado.";
+                    exit();
+                }
+                $modelo = $result['modelo'];
+                $marca = $result['marca'];
+                $placa = $result['placa'];
+                $cor = $result['cor'];
+                $ano = $result['ano'];
+            }
+        ?>
 
 </html>
