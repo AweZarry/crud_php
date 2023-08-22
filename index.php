@@ -15,6 +15,16 @@ if (isset($_GET['action'])) {
         case 'read':
             $rows = $crud->read();
             break;
+        case 'update':
+            if (isset($_POST['id'])) {
+                $crud->update($_POST);
+            }
+            $rows = $crud->read();
+            break;
+        case 'delete':
+            $crud->delete($_GET['id']);
+            $rows = $crud->read();
+            break;
 
         default:
             $rows = $crud->read();
@@ -115,24 +125,69 @@ if (isset($_GET['action'])) {
 </head>
 
 <body>
-    <form action="?action=create" method="POST">
-        <label for="">Modelo</label>
-        <input type="text" name="modelo">
+    <?php
+    if (isset($_GET['action']) && $_GET['action'] == 'update' && isset($_GET['id'])) {
+        $id = $_GET['id'];
+        $result = $crud->readOne($id);
 
-        <label for="">Marca</label>
-        <input type="text" name="marca">
+        if (!$result) {
+            echo "Registro não encontrado.";
+            exit();
+        }
+        $modelo = $result['modelo'];
+        $marca = $result['marca'];
+        $placa = $result['placa'];
+        $cor = $result['cor'];
+        $ano = $result['ano'];
 
-        <label for="">Placa</label>
-        <input type="text" name="placa">
+    ?>
 
-        <label for="">Cor</label>
-        <input type="text" name="cor">
+        <form action="?action=update" method="POST">
+            <input type="hidden" name="id" value="<?php echo $id ?>">
+            <label for="modelo">Modelo</label>
+            <input type="text" name="modelo" value="<?php echo $modelo ?>">
 
-        <label for="">Ano</label>
-        <input type="text" name="ano">
+            <label for="marca">Marca</label>
+            <input type="text" name="marca" value="<?php echo $marca ?>">
 
-        <input type="submit" value="Cadastrar" name"enviar">
-    </form>
+            <label for="placa">Placa</label>
+            <input type="text" name="placa" value="<?php echo $placa ?>">
+
+            <label for="cor">Cor</label>
+            <input type="text" name="cor" value="<?php echo $cor ?>">
+
+            <label for="ano">Ano</label>
+            <input type="text" name="ano" value="<?php echo $ano ?>">
+
+            <input type="submit" value="Atualizar" name="enviar" onclick="return confirm('Certeza que deseja atualizar?')">
+
+        </form>
+
+    <?php
+    } else {
+    ?>
+
+        <form action="?action=create" method="POST">
+            <label for="">Modelo</label>
+            <input type="text" name="modelo">
+
+            <label for="">Marca</label>
+            <input type="text" name="marca">
+
+            <label for="">Placa</label>
+            <input type="text" name="placa">
+
+            <label for="">Cor</label>
+            <input type="text" name="cor">
+
+            <label for="">Ano</label>
+            <input type="text" name="ano">
+
+            <input type="submit" value="Cadastrar" name"enviar">
+        </form>
+    <?php
+    }
+    ?>
 
     <table>
         <tr>
@@ -171,22 +226,5 @@ if (isset($_GET['action'])) {
     </table>
 
 </body>
-
-        <?php
-            if(isset($_GET['action']) && $_GET['action'] == 'update' && isset($_GET['id'])){
-                $id = $_GET['id'];
-                $result =$crud->readOne($id);
-
-                if($result){
-                    echo "Registro não encontrado.";
-                    exit();
-                }
-                $modelo = $result['modelo'];
-                $marca = $result['marca'];
-                $placa = $result['placa'];
-                $cor = $result['cor'];
-                $ano = $result['ano'];
-            }
-        ?>
 
 </html>
