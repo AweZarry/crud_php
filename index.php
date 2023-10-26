@@ -1,230 +1,174 @@
 <?php
-require_once('classes/Crud.php');
-require_once('conexao/conexao.php');
+session_start();
 
-$database = new Database();
+require_once('classes/Usuario.php');
+require_once('database/conexao.php');
+
+$database = new Conexao();
 $db = $database->getConnection();
-$crud = new Crud($db);
+$prova = new registro($db);
 
-if (isset($_GET['action'])) {
-    switch ($_GET['action']) {
-        case 'create':
-            $crud->create($_POST);
-            $rows = $crud->read();
-            break;
-        case 'read':
-            $rows = $crud->read();
-            break;
-        case 'update':
-            if (isset($_POST['id'])) {
-                $crud->update($_POST);
-            }
-            $rows = $crud->read();
-            break;
-        case 'delete':
-            $crud->delete($_GET['id']);
-            $rows = $crud->read();
-            break;
+$geral = [];
 
-        default:
-            $rows = $crud->read();
-            break;
+$queryd = "SELECT * FROM carros ORDER BY id_carro DESC LIMIT 6";
+
+$resultd = $db->query($queryd);
+
+
+if ($resultd->rowCount() > 0) {
+    while ($row = $resultd->fetch(PDO::FETCH_ASSOC)) {
+        $geral[] = $row;
     }
-} else {
-    $rows = $crud->read();
+}
+
+
+$id_carro = isset($_GET['id_carro']) ? $_GET['id_carro'] : "";
+
+
+$searchTerm = isset($_GET['search']) ? $_GET['search'] : "";
+
+$queryd = "SELECT * FROM carros";
+if (!empty($searchTerm)) {
+    $searchTerm = '%' . $searchTerm . '%';
+    $queryd .= " WHERE marca LIKE :searchTerm OR modelo LIKE :searchTerm";
+}
+$queryd .= " ORDER BY id_carro DESC LIMIT 6";
+
+$stmt = $db->prepare($queryd);
+
+if (!empty($searchTerm)) {
+    $stmt->bindParam(':searchTerm', $searchTerm, PDO::PARAM_STR);
+}
+
+$stmt->execute();
+
+$geral = [];
+
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $geral[] = $row;
 }
 
 ?>
 
-
-
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crud</title>
+    <title>Home</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <style>
-        form {
-            max-width: 500px;
-            margin: 0 auto;
+        body {
+            background-image: url(img/carro.gif);
         }
 
-        label {
-            display: flex;
-            margin-top: 10px
-        }
-
-        input[type=text] {
-            width: 100%;
-            padding: 12px 20px;
-            margin: 8px 0;
-            display: inline-block;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        input[type=submit] {
-            background-color: #4caf50;
-            color: white;
-            padding: 12px 20px;
+        .card {
+            transition: 0.3s;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            float: right;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: white;
         }
 
-        input[type=submit]:hover {
-            background-color: #45a049;
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
 
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            color: #333;
-        }
-
-        th,
-        td {
-            text-align: left;
-            padding: 8px;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f2f2f2;
+        .card-title {
+            font-size: 1.25rem;
             font-weight: bold;
         }
 
-        a {
-            display: inline-block;
-            padding: 4px 8px;
-            background-color: #007bff;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 4px;
+        .card-text {
+            color: #6c757d;
         }
 
-        a:hover {
-            background-color: #0069d9;
+        .navbar-brand img {
+            background-color: gray;
+            width: 90px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
-        a.delete {
-            background-color: #dc3545;
-        }
-
-        a.delete:hover {
-            background-color: #c82333;
+        #azin {
+            background-color: #9400d3;
+            border: none;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 
 <body>
-    <?php
-    if (isset($_GET['action']) && $_GET['action'] == 'update' && isset($_GET['id'])) {
-        $id = $_GET['id'];
-        $result = $crud->readOne($id);
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="index.php">
+                <img src="img/logo.png" width="90" height="90" class="d-inline-block align-top" alt="Logo">
+            </a>
 
-        if (!$result) {
-            echo "Registro não encontrado.";
-            exit();
-        }
-        $modelo = $result['modelo'];
-        $marca = $result['marca'];
-        $placa = $result['placa'];
-        $cor = $result['cor'];
-        $ano = $result['ano'];
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <?php if (isset($_SESSION['nome'])) : ?>
+                        <li class="nav-item">
+                            <form class="form-inline my-2 my-lg-0" method="get" action="index.php">
+                                <div class="input-group">
+                                    <input class="form-control" type="search" placeholder="Pesquisar" aria-label="Pesquisar" name="search">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-primary" type="submit">Pesquisar</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="cadastrocarro.php">Cadastrar Carro</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="atuadele.php">Atualizar Carro</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logout.php">Sair</a>
+                        </li>
+                    <?php else : ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.php">Logar</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="cadastrar.php">Cadastrar</a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-    ?>
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Carros Registrados</h2>
 
-        <form action="?action=update" method="POST">
-            <input type="hidden" name="id" value="<?php echo $id ?>">
-            <label for="modelo">Modelo</label>
-            <input type="text" name="modelo" value="<?php echo $modelo ?>">
+        <div class="row">
+            <?php foreach ($geral as $row) : ?>
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title"><?php echo $row['marca'] . ' ' . $row['modelo']; ?></h5>
+                            <p class="card-text">Ano: <?php echo $row['ano_de_fabricacao']; ?></p>
+                            <p class="card-text">Preço: <?php echo $row['preco']; ?></p>
+                            <?php if (isset($_SESSION['nome'])) : ?>
+                                <a href="atuadele.php?id_carro=<?php echo $row['id_carro']; ?>" class="btn btn-primary btn-sm" id="azin">Checar Registros</a>
+                            <?php else : ?>
+                                <a href="login.php" class="btn btn-primary btn-sm" id="azin">Checar Registros</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
 
-            <label for="marca">Marca</label>
-            <input type="text" name="marca" value="<?php echo $marca ?>">
-
-            <label for="placa">Placa</label>
-            <input type="text" name="placa" value="<?php echo $placa ?>">
-
-            <label for="cor">Cor</label>
-            <input type="text" name="cor" value="<?php echo $cor ?>">
-
-            <label for="ano">Ano</label>
-            <input type="text" name="ano" value="<?php echo $ano ?>">
-
-            <input type="submit" value="Atualizar" name="enviar" onclick="return confirm('Certeza que deseja atualizar?')">
-
-        </form>
-
-    <?php
-    } else {
-    ?>
-
-        <form action="?action=create" method="POST">
-            <label for="">Modelo</label>
-            <input type="text" name="modelo">
-
-            <label for="">Marca</label>
-            <input type="text" name="marca">
-
-            <label for="">Placa</label>
-            <input type="text" name="placa">
-
-            <label for="">Cor</label>
-            <input type="text" name="cor">
-
-            <label for="">Ano</label>
-            <input type="text" name="ano">
-
-            <input type="submit" value="Cadastrar" name"enviar">
-        </form>
-    <?php
-    }
-    ?>
-
-    <table>
-        <tr>
-            <td>Id</td>
-            <td>Modelo</td>
-            <td>Marca</td>
-            <td>Placa</td>
-            <td>Cor</td>
-            <td>ano</td>
-            <td>Ações</td>
-        </tr>
-
-        <?php
-        if ($rows->rowCount() == 0) {
-            echo "<tr>";
-            echo "<td colspan='7'>Nenhum dado encontrado</td>";
-            echo "</tr>";
-        } else {
-            while ($row = $rows->fetch(PDO::FETCH_ASSOC)) {
-                echo "<tr>";
-                echo "<td>" . $row['id'] . "</td>";
-                echo "<td>" . $row['modelo'] . "</td>";
-                echo "<td>" . $row['marca'] . "</td>";
-                echo "<td>" . $row['placa'] . "</td>";
-                echo "<td>" . $row['cor'] . "</td>";
-                echo "<td>" . $row['ano'] . "</td>";
-                echo "<td>";
-                echo "<a href='?action=update&id=" . $row['id'] . "'>Editar</a>";
-                echo "<a href='?action=delete&id=" . $row['id'] . "' onclick='return confirm(\"Tem certeza que quer apagar esse registro?\")' class='delete'>Delete</a>";
-                echo "</td>";
-                echo "</tr>";
-            }
-        }
-        ?>
-
-    </table>
-
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
+
 
 </html>
